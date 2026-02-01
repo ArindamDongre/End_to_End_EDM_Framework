@@ -1,51 +1,27 @@
 #include <stdio.h>
-#include <stdlib.h>
+#include "ast.h"
 
-/* Correct includes */
-#include "../core/ast.h"
-#include "../core/ir.h"
-#include "../core/irgen.h"
-#include "../core/semantic.h"
-
-
-#include "parser_driver.h"
-
-/* Flex/Bison globals */
-extern int yyparse(void);
-extern FILE *yyin;
-
-/* AST root from parser */
 extern ASTNode *ast_root;
+extern int yyparse();
+extern FILE *yyin;
+extern int yylineno;
 
-int parse_source(const char *path, ASTNode **out_ast, IR **out_ir)
-{
-    printf("DEBUG: Opening source file: %s\n", path);
-
-    yyin = fopen(path, "r");
-    if (!yyin) {
-        perror("fopen");
-        return 0;
+ASTNode* parse_source(const char* source_file) {
+    FILE *f = fopen(source_file, "r");
+    if (!f) {
+        perror("Error opening file");
+        return NULL;
     }
+    
+    yylineno = 1; // Reset line counter
+    yyin = f;
+    ast_root = NULL;
 
-    /* Parse */
-    if (yyparse() != 0) {
-        printf("Parsing failed.\n");
-        fclose(yyin);
-        return 0;
+    if (yyparse() == 0) {
+        fclose(f);
+        return ast_root;
     }
-
-    fclose(yyin);
-
-    printf("DEBUG: Parsing finished successfully.\n");
-
-    /* Semantic check */
-    semantic_check(ast_root);
-
-    /* IR Generation */
-    IR *ir = irgen_generate(ast_root);
-
-    *out_ast = ast_root;
-    *out_ir = ir;
-
-    return 1;
+    
+    fclose(f);
+    return NULL;
 }

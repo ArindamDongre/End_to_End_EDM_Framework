@@ -6,9 +6,12 @@
 #include <algorithm>
 #include <map>
 
+/* ✅ FIX 1: Wrap C headers in extern "C" so the C++ shell can see the C compiler data */
+extern "C" {
 #include "../../core/program.h"
-#include "../../core/compiler.h"   // ✅ Phase2
-#include "../../core/ir.h"         // ✅ Phase2
+#include "../../core/compiler.h"
+#include "../../core/ir.h"
+}
 
 #include "../include/executor.hpp"
 
@@ -187,7 +190,7 @@ bool run_builtin(const Command &cmd) {
 }
 
 /* ============================================================
-   PROGRAM COMMANDS (submit/list/run/kill/compile/ir)
+    PROGRAM COMMANDS (submit/list/run/kill/compile/ir)
    ============================================================ */
 
 extern std::map<int, Program*> program_table;
@@ -247,26 +250,24 @@ bool handle_program_commands(std::vector<std::string>& args) {
     // ---------------- IR ----------------
     if (args[0] == "ir") {
         if (args.size() < 2) {
-            cout << "Usage: ir <pid>\n";
+            cout << "Usage: ir <pid>" << endl;
             return true;
         }
-
         int pid = stoi(args[1]);
-
         if (program_table.find(pid) == program_table.end()) {
-            cout << "No such program with PID " << pid << "\n";
+            cout << "No such program with PID " << pid << endl;
             return true;
         }
 
         Program* p = program_table[pid];
-
-        if (!p->ir) {
-            cout << "Program not compiled yet.\n";
-            return true;
+        
+        /* ✅ FIX 2: Correct pointer check for IR */
+        if (p->ir == nullptr) {
+            cout << "Program not compiled yet. Run: compile " << pid << endl;
+        } else {
+            cout << "IR for Program " << pid << ":" << endl;
+            ir_dump(p->ir); 
         }
-
-        cout << "\n====== IR OUTPUT ======\n";
-        ir_dump(p->ir);
         return true;
     }
 
@@ -286,11 +287,13 @@ bool handle_program_commands(std::vector<std::string>& args) {
 
         Program* p = program_table[pid];
 
-        cout << "Compiling program " << pid << "...\n";
-
-        if (!compile_program(p)) {
-            cout << "Compilation failed.\n";
-            return true;
+        // Compile if needed
+        if (p->ir == nullptr) {
+            cout << "Compiling program " << pid << "...\n";
+            if (!compile_program(p)) {
+                cout << "Compilation failed.\n";
+                return true;
+            }
         }
 
         cout << "\n====== IR OUTPUT (Phase 2) ======\n";
@@ -303,25 +306,27 @@ bool handle_program_commands(std::vector<std::string>& args) {
     }
 
     // ---------------- KILL ----------------
-    if (args[0] == "kill") {
-        if (args.size() < 2) {
-            cout << "Usage: kill <pid>\n";
-            return true;
-        }
-
-        int pid = stoi(args[1]);
-
-        if (program_table.find(pid) == program_table.end()) {
-            cout << "No such program with PID " << pid << "\n";
-            return true;
-        }
-
-        program_destroy(program_table[pid]);
-        program_table.erase(pid);
-
-        cout << "Killed " << pid << "\n";
+    // ---------------- KILL ----------------
+if (args[0] == "kill") {
+    if (args.size() < 2) {
+        cout << "Usage: kill <pid>\n";
         return true;
     }
+
+    int pid = stoi(args[1]);
+
+    if (program_table.find(pid) == program_table.end()) {
+        cout << "No such program with PID " << pid << "\n";
+        return true;
+    }
+
+    // ✅ Fix: Use the correct function name defined in program.h/c
+    program_destroy(program_table[pid]); 
+    program_table.erase(pid);
+
+    cout << "Killed " << pid << "\n";
+    return true;
+}
 
     return false;
 }

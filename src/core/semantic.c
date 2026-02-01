@@ -1,91 +1,91 @@
-#include "semantic.h"
+#include "ast.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-/* Simple symbol table */
 typedef struct Symbol {
-    char name[32];
+    char *name;
     struct Symbol *next;
 } Symbol;
 
-static Symbol *symbol_table = NULL;
+static Symbol *symtab = NULL;
 
-/* Add variable */
-static void declare_var(const char *name)
-{
-    Symbol *s = symbol_table;
-    while (s) {
-        if (strcmp(s->name, name) == 0) {
-            printf("Semantic Error: Variable '%s' already declared.\n", name);
-            exit(1);
-        }
-        s = s->next;
+/* Reset table per program */
+void semantic_reset() {
+    while (symtab) {
+        Symbol *tmp = symtab;
+        symtab = symtab->next;
+        free(tmp->name);
+        free(tmp);
     }
-
-    Symbol *new_sym = malloc(sizeof(Symbol));
-    strncpy(new_sym->name, name, sizeof(new_sym->name));
-    new_sym->next = symbol_table;
-    symbol_table = new_sym;
+    symtab = NULL; // Ensure it's explicitly null
 }
 
-/* Check variable exists */
-static void check_var(const char *name)
-{
-    Symbol *s = symbol_table;
-    while (s) {
+static int symbol_exists(const char *name) {
+    for (Symbol *s = symtab; s; s = s->next) {
         if (strcmp(s->name, name) == 0)
-            return;
-        s = s->next;
+            return 1;
     }
-
-    printf("Semantic Error: Variable '%s' used before declaration.\n", name);
-    exit(1);
+    return 0;
 }
 
-/* Walk AST */
-static void visit(ASTNode *node)
-{
+static void symbol_add(const char *name) {
+    Symbol *s = malloc(sizeof(Symbol));
+    s->name = strdup(name);
+    s->next = symtab;
+    symtab = s;
+}
+
+/* Your internal recursive check */
+void semantic_check(ASTNode *node) {
     if (!node) return;
 
-    switch (node->type)
-    {
+    switch (node->type) {
         case AST_VAR_DECL:
-            declare_var(node->name);
-
-            if (node->right)
-                visit(node->right);
+            if (symbol_exists(node->name)) {
+                printf("Semantic Error: Variable '%s' already declared.\n", node->name);
+                exit(1);
+            }
+            symbol_add(node->name);
             break;
 
         case AST_ASSIGN:
-            check_var(node->left->name);
-            visit(node->right);
+            // Ensure the left side of assignment exists
+            if (node->left && node->left->type == AST_IDENT) {
+                if (!symbol_exists(node->left->name)) {
+                    printf("Semantic Error: Variable '%s' not declared.\n", node->left->name);
+                    exit(1);
+                }
+            }
             break;
 
         case AST_IDENT:
-            check_var(node->name);
-            break;
-
-        case AST_BINOP:
-            visit(node->left);
-            visit(node->right);
-            break;
-
-        case AST_BLOCK:
-            visit(node->left);
+            if (!symbol_exists(node->name)) {
+                printf("Semantic Error: Variable '%s' not declared.\n", node->name);
+                exit(1);
+            }
             break;
 
         default:
             break;
     }
 
-    visit(node->next);
+    semantic_check(node->left);
+    semantic_check(node->right);
+    semantic_check(node->third);
+    semantic_check(node->next);
 }
 
-/* Entry */
-void semantic_check(ASTNode *root)
-{
-    printf("DEBUG: Running semantic check...\n");
-    visit(root);
-    printf("DEBUG: Semantic check passed.\n");
+/* ✅ THIS IS THE FUNCTION THE COMPILER IS LOOKING FOR */
+int semantic_analysis(ASTNode *root) {
+    if (!root) return 0;
+    
+    // 1. Clear old symbols from previous runs
+    semantic_reset();
+    
+    // 2. Run the check
+    semantic_check(root);
+    
+    // 3. Return 0 for success (per your compiler.c logic)
+    return 0;
 }

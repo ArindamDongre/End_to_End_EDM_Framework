@@ -1,48 +1,33 @@
 #ifndef IR_H
 #define IR_H
 
-#include <stdio.h>
+#include "ast.h"
 
 typedef enum {
     IR_LOAD_CONST,
     IR_LOAD_VAR,
     IR_STORE_VAR,
-
-    IR_ADD,
-    IR_SUB,
-    IR_MUL,
-    IR_DIV,
-
-    IR_EQ,
-    IR_NE,
-    IR_LT,
-    IR_GT,
-    IR_LE,
-    IR_GE,
-
-    IR_HALT
-} IROpcode;
+    IR_ADD, IR_SUB, IR_MUL, IR_DIV,
+    IR_EQ, IR_NE, IR_LT, IR_GT, IR_LE, IR_GE
+} IROp;
 
 typedef struct {
-    IROpcode op;
-
-    int arg_int;
-    char arg_name[32];
-
-    int line;
+    IROp op;
+    int value;
+    char name[32];
 } IRInstr;
 
-typedef struct IR {
-    IRInstr *code;
-    int count;
+typedef struct {
+    IRInstr *instructions;
+    int size;
     int capacity;
 } IR;
 
-IR *ir_create();
+/* Function Declarations */
+IR* ir_create();
 void ir_emit(IR *p, IRInstr instr);
+IRInstr make_instr(IROp op, int value, const char* name); // Added declaration
 void ir_dump(IR *p);
-
-/* ✅ ADD THIS */
 void ir_free(IR *p);
 
 #endif

@@ -3,14 +3,10 @@
 
 #include "ast.h"
 
-/*
-   Semantic Analysis Phase
+/* Reset symbol table per compile */
+void semantic_reset();
 
-   Checks things like:
-   - Variable used before declaration
-   - Duplicate declarations
-*/
-
+/* Main semantic pass */
 void semantic_check(ASTNode *root);
 
 #endif

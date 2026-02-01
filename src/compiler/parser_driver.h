@@ -1,9 +1,10 @@
 #ifndef PARSER_DRIVER_H
 #define PARSER_DRIVER_H
 
-#include "../core/ast.h"
-#include "../core/ir.h"
+#include "ast.h"
+#include "ir.h"
 
-int parse_source(const char *filename, ASTNode **ast_out, IR **ir_out);
+/* ✅ Fixed signature: Returns the AST root pointer, takes only the filename */
+ASTNode* parse_source(const char *filename);
 
 #endif

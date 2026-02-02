@@ -11,6 +11,7 @@ extern "C" {
 #include "../../core/program.h"
 #include "../../core/compiler.h"
 #include "../../core/ir.h"
+#include "../../vm/vm_ir.h"
 }
 
 #include "../include/executor.hpp"
@@ -314,6 +315,8 @@ bool handle_program_commands(std::vector<std::string>& args) {
 
         p->state = PROGRAM_RUNNING;
         cout << "Running program " << pid << "\n";
+
+        vm_execute(p->ir);
 
         return true;
     }

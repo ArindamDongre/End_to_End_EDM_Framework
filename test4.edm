@@ -1,4 +1,1 @@
-var x = 1;
-if (x) {
-    while (x) { }
-}
+x = 5;

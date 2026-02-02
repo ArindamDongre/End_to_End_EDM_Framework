@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "irgen.h"
 #include "ast.h"
 #include "ir.h"
 

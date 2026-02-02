@@ -1,75 +1,17 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#ifndef IRGEN_H
+#define IRGEN_H
+
 #include "ast.h"
 #include "ir.h"
 
-static void gen_stmt(IR *ir, ASTNode *n);
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-static void gen_expr(IR *ir, ASTNode *n) {
-    if (!n) return;
-    switch(n->type) {
-        case AST_INT:
-            ir_emit(ir, make_instr(IR_LOAD_CONST, n->value, NULL));
-            break;
-        case AST_IDENT:
-            ir_emit(ir, make_instr(IR_LOAD_VAR, 0, n->name));
-            break;
-        case AST_BINOP:
-            gen_expr(ir, n->left);
-            gen_expr(ir, n->right);
-            switch(n->op) {
-                case AST_OP_ADD: ir_emit(ir, make_instr(IR_ADD, 0, NULL)); break;
-                case AST_OP_SUB: ir_emit(ir, make_instr(IR_SUB, 0, NULL)); break;
-                case AST_OP_MUL: ir_emit(ir, make_instr(IR_MUL, 0, NULL)); break;
-                case AST_OP_DIV: ir_emit(ir, make_instr(IR_DIV, 0, NULL)); break;
-                case AST_OP_EQ:  ir_emit(ir, make_instr(IR_EQ,  0, NULL)); break;
-                case AST_OP_NE:  ir_emit(ir, make_instr(IR_NE,  0, NULL)); break;
-                case AST_OP_LT:  ir_emit(ir, make_instr(IR_LT,  0, NULL)); break;
-                case AST_OP_GT:  ir_emit(ir, make_instr(IR_GT,  0, NULL)); break;
-                case AST_OP_LE:  ir_emit(ir, make_instr(IR_LE,  0, NULL)); break;
-                case AST_OP_GE:  ir_emit(ir, make_instr(IR_GE,  0, NULL)); break;
-            }
-            break;
-        default: break;
-    }
-}
+IR* generate_ir(ASTNode *root);
 
-static void gen_stmt(IR *ir, ASTNode *n) {
-    for (ASTNode *curr = n; curr; curr = curr->next) {
-        switch(curr->type) {
-            case AST_VAR_DECL:
-                if (curr->left) gen_expr(ir, curr->left);
-                else ir_emit(ir, make_instr(IR_LOAD_CONST, 0, NULL));
-                ir_emit(ir, make_instr(IR_STORE_VAR, 0, curr->name));
-                break;
-            case AST_ASSIGN:
-                gen_expr(ir, curr->right);
-                ir_emit(ir, make_instr(IR_STORE_VAR, 0, curr->left->name));
-                break;
-            case AST_BLOCK:
-                gen_stmt(ir, curr->left);
-                break;
-            case AST_IF:
-                gen_expr(ir, curr->left);
-                gen_stmt(ir, curr->right);
-                if (curr->third) gen_stmt(ir, curr->third);
-                break;
-            case AST_WHILE:
-                gen_expr(ir, curr->left);
-                gen_stmt(ir, curr->right);
-                break;
-            default: break;
-        }
-    }
+#ifdef __cplusplus
 }
+#endif
 
-IR* generate_ir(ASTNode *root) {
-    IR *ir = ir_create();
-    if (root && root->type == AST_BLOCK) {
-        gen_stmt(ir, root->left);
-    } else {
-        gen_stmt(ir, root);
-    }
-    return ir;
-}
+#endif

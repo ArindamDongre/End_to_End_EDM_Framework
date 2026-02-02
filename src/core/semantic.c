@@ -37,24 +37,23 @@ static void symbol_add(const char *name) {
 }
 
 /* Your internal recursive check */
-void semantic_check(ASTNode *node) {
-    if (!node) return;
+int semantic_check(ASTNode *node) {
+    if (!node) return 0;
 
     switch (node->type) {
         case AST_VAR_DECL:
             if (symbol_exists(node->name)) {
                 printf("Semantic Error: Variable '%s' already declared.\n", node->name);
-                exit(1);
+                return 1;
             }
             symbol_add(node->name);
             break;
 
         case AST_ASSIGN:
-            // Ensure the left side of assignment exists
             if (node->left && node->left->type == AST_IDENT) {
                 if (!symbol_exists(node->left->name)) {
                     printf("Semantic Error: Variable '%s' not declared.\n", node->left->name);
-                    exit(1);
+                    return 1;
                 }
             }
             break;
@@ -62,7 +61,7 @@ void semantic_check(ASTNode *node) {
         case AST_IDENT:
             if (!symbol_exists(node->name)) {
                 printf("Semantic Error: Variable '%s' not declared.\n", node->name);
-                exit(1);
+                return 1;
             }
             break;
 
@@ -70,10 +69,12 @@ void semantic_check(ASTNode *node) {
             break;
     }
 
-    semantic_check(node->left);
-    semantic_check(node->right);
-    semantic_check(node->third);
-    semantic_check(node->next);
+    if (semantic_check(node->left))  return 1;
+    if (semantic_check(node->right)) return 1;
+    if (semantic_check(node->third)) return 1;
+    if (semantic_check(node->next))  return 1;
+
+    return 0;
 }
 
 /* ✅ THIS IS THE FUNCTION THE COMPILER IS LOOKING FOR */
@@ -83,9 +84,7 @@ int semantic_analysis(ASTNode *root) {
     // 1. Clear old symbols from previous runs
     semantic_reset();
     
-    // 2. Run the check
-    semantic_check(root);
-    
-    // 3. Return 0 for success (per your compiler.c logic)
+    if (semantic_check(root)) return 1;
+
     return 0;
 }

@@ -7,6 +7,6 @@
 void semantic_reset();
 
 /* Main semantic pass */
-void semantic_check(ASTNode *root);
+int semantic_check(ASTNode *root);
 
 #endif

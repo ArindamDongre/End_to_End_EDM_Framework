@@ -90,6 +90,14 @@ bool is_valid_var_name(const std::string &name) {
 
 } // namespace
 
+bool is_number(const string& s) {
+    if (s.empty()) return false;
+    for (char c : s) {
+        if (!isdigit(c)) return false;
+    }
+    return true;
+}
+
 bool run_builtin(const Command &cmd) {
     if (cmd.commands.empty() || cmd.commands.front().argv.empty()) {
         return true;
@@ -278,6 +286,11 @@ bool handle_program_commands(std::vector<std::string>& args) {
             return true;
         }
 
+        if (!is_number(args[1])) {
+            cout << "PID must be a number\n";
+            return true;
+        }
+
         int pid = stoi(args[1]);
 
         if (program_table.find(pid) == program_table.end()) {
@@ -306,27 +319,32 @@ bool handle_program_commands(std::vector<std::string>& args) {
     }
 
     // ---------------- KILL ----------------
-    // ---------------- KILL ----------------
-if (args[0] == "kill") {
-    if (args.size() < 2) {
-        cout << "Usage: kill <pid>\n";
+    if (args[0] == "kill") {
+        if (args.size() < 2) {
+            cout << "Usage: kill <pid>\n";
+            return true;
+        }
+
+        if (!is_number(args[1])) {
+            cout << "PID must be a number\n";
+            return true;
+        }
+
+
+        int pid = stoi(args[1]);
+
+        if (program_table.find(pid) == program_table.end()) {
+            cout << "No such program with PID " << pid << "\n";
+            return true;
+        }
+
+        // ✅ Fix: Use the correct function name defined in program.h/c
+        program_destroy(program_table[pid]); 
+        program_table.erase(pid);
+
+        cout << "Killed " << pid << "\n";
         return true;
     }
-
-    int pid = stoi(args[1]);
-
-    if (program_table.find(pid) == program_table.end()) {
-        cout << "No such program with PID " << pid << "\n";
-        return true;
-    }
-
-    // ✅ Fix: Use the correct function name defined in program.h/c
-    program_destroy(program_table[pid]); 
-    program_table.erase(pid);
-
-    cout << "Killed " << pid << "\n";
-    return true;
-}
 
     return false;
 }

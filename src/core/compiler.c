@@ -21,8 +21,6 @@ int compile_program(Program* p) {
 
     printf("DEBUG: compile_program() called for PID %d\n", p->pid);
 
-    // 1. Parsing
-    // ✅ Now matches the fixed header: 1 argument, returns ASTNode*
     ASTNode* root = parse_source(p->source_path);
 
     if (root == NULL) {
@@ -30,25 +28,24 @@ int compile_program(Program* p) {
         return 0;
     }
 
-    // 2. Semantic Analysis
+    // Semantic Analysis
     if (semantic_analysis(root) != 0) {
         printf("DEBUG: Semantic analysis failed.\n");
-        // Optionally free root here if you have an ast_free function
+        ast_free(root);          // <-- important
         return 0;
     }
 
-    // 3. IR Generation 
+    // IR Generation 
     IR* generated_ir_ptr = generate_ir(root);
-    
-    // Save the pointer to the program struct so the shell can access it
-    p->ir = generated_ir_ptr;
-    
-    if (p->ir) {
-        printf("DEBUG: IR generated successfully.\n");
-        p->state = PROGRAM_READY; 
-        return 1; // Success
+    ast_free(root);              // <-- AST no longer needed
+
+    if (!generated_ir_ptr) {
+        printf("DEBUG: IR generation failed.\n");
+        return 0;
     }
 
-    printf("DEBUG: IR generation failed.\n");
-    return 0; 
+    p->ir = generated_ir_ptr;
+    printf("DEBUG: IR generated successfully.\n");
+    p->state = PROGRAM_READY; 
+    return 1;
 }

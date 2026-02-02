@@ -25,7 +25,8 @@ CORE_SRC = \
     src/core/ir.c \
     src/core/ast.c \
     src/core/irgen.c \
-    src/core/semantic.c
+    src/core/semantic.c \
+    src/vm/vm_ir.c
 
 # -------------------------------
 # Compiler (Flex/Bison)
@@ -75,7 +76,7 @@ $(COMPILER_DIR)/lex.yy.c: $(COMPILER_DIR)/lexer.l $(COMPILER_DIR)/parser.tab.h
 # Compile C core files
 # -------------------------------
 %.o: %.c
-	$(CC) $(CFLAGS) -I$(CORE_DIR) -I$(COMPILER_DIR) -c $< -o $@
+	$(CC) $(CFLAGS) -I$(CORE_DIR) -I$(COMPILER_DIR) -Isrc/vm -c $< -o $@
 
 # -------------------------------
 # Compile C++ shell files

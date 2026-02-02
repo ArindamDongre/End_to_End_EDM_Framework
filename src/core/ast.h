@@ -8,7 +8,7 @@ typedef enum {
 
 typedef enum {
     AST_BLOCK, AST_VAR_DECL, AST_ASSIGN, AST_BINOP,
-    AST_INT, AST_IDENT, AST_IF, AST_WHILE
+    AST_INT, AST_IDENT, AST_IF, AST_WHILE, AST_FOR
 } ASTNodeType;
 
 typedef struct ASTNode {
@@ -27,6 +27,10 @@ ASTNode *ast_make_var_decl(char *name, ASTNode *init);
 ASTNode *ast_make_block(ASTNode *stmts);
 ASTNode *ast_make_if(ASTNode *cond, ASTNode *thenb, ASTNode *elseb);
 ASTNode *ast_make_while(ASTNode *cond, ASTNode *body);
+ASTNode *ast_make_for(ASTNode *init,
+                      ASTNode *cond,
+                      ASTNode *step,
+                      ASTNode *body);
 void ast_free(ASTNode *node);
 
 #endif

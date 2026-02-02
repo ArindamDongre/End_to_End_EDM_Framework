@@ -4,6 +4,21 @@
 #include "ast.h"
 #include "ir.h"
 
+static int next_label = 0;
+static int new_label() { return next_label++; }
+
+static void emit_label(IR *ir, int id) {
+    ir_emit(ir, make_instr(IR_LABEL, id, NULL));
+}
+
+static void emit_jmp(IR *ir, int id) {
+    ir_emit(ir, make_instr(IR_JMP, id, NULL));
+}
+
+static void emit_jz(IR *ir, int id) {
+    ir_emit(ir, make_instr(IR_JZ, id, NULL));
+}
+
 static void gen_stmt(IR *ir, ASTNode *n);
 
 static void gen_expr(IR *ir, ASTNode *n) {
@@ -54,15 +69,44 @@ static void gen_stmt(IR *ir, ASTNode *n) {
             case AST_BLOCK:
                 gen_stmt(ir, curr->left); // Recurse into block
                 break;
-            case AST_IF:
+            case AST_IF: {
+                int else_lbl = new_label();
+                int end_lbl = new_label();
+
                 gen_expr(ir, curr->left);
+                emit_jz(ir, else_lbl);
                 gen_stmt(ir, curr->right);
+                emit_jmp(ir, end_lbl);
+                emit_label(ir, else_lbl);
                 if (curr->third) gen_stmt(ir, curr->third);
+                emit_label(ir, end_lbl);
                 break;
-            case AST_WHILE:
+            }
+            case AST_WHILE: {
+                int start = new_label();
+                int end = new_label();
+
+                emit_label(ir, start);
                 gen_expr(ir, curr->left);
+                emit_jz(ir, end);
                 gen_stmt(ir, curr->right);
+                emit_jmp(ir, start);
+                emit_label(ir, end);
                 break;
+            }
+            case AST_FOR: {
+                int start = new_label();
+                int end = new_label();
+
+                gen_stmt(ir, curr->left);    // init
+                emit_label(ir, start);
+                gen_expr(ir, curr->right);  // condition
+                emit_jz(ir, end);
+                gen_stmt(ir, curr->third);  // body (already includes step)
+                emit_jmp(ir, start);
+                emit_label(ir, end);
+                break;
+            }
             default: break;
         }
     }

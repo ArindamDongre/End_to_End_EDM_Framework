@@ -71,6 +71,29 @@ ASTNode *ast_make_while(ASTNode *cond, ASTNode *body) {
     return n;
 }
 
+ASTNode *ast_make_for(ASTNode *init,
+                      ASTNode *cond,
+                      ASTNode *step,
+                      ASTNode *body) {
+
+    // append step to the end of body block
+    ASTNode *n = body;
+    if (n) {
+        while (n->next) n = n->next;
+        n->next = step;
+    } else {
+        body = step;
+    }
+
+    ASTNode *f = new_node(AST_FOR);
+    f->left  = init;
+    f->right = cond;
+    f->third = body;
+    f->next  = NULL;   // IMPORTANT
+    return f;
+}
+
+
 void ast_free(ASTNode *n) {
     if (!n) return;
     ast_free(n->left);

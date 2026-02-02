@@ -15,6 +15,7 @@ typedef struct ASTNode ASTNode;
 "if"        { return IF; }
 "else"      { return ELSE; }
 "while"     { return WHILE; }
+"for"       { return FOR; }
 
 "=="        { return EQ; }
 "!="        { return NE; }

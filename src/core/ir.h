@@ -8,7 +8,10 @@ typedef enum {
     IR_LOAD_VAR,
     IR_STORE_VAR,
     IR_ADD, IR_SUB, IR_MUL, IR_DIV,
-    IR_EQ, IR_NE, IR_LT, IR_GT, IR_LE, IR_GE
+    IR_EQ, IR_NE, IR_LT, IR_GT, IR_LE, IR_GE,
+    IR_JMP,
+    IR_JZ,
+    IR_LABEL
 } IROp;
 
 typedef struct {

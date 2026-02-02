@@ -15,12 +15,12 @@ int yylex(void);
     ASTNode *node;
 }
 
-%token VAR IF ELSE WHILE ASSIGN SEMI LBRACE RBRACE LPAREN RPAREN
+%token VAR IF ELSE WHILE FOR ASSIGN SEMI LBRACE RBRACE LPAREN RPAREN
 %token PLUS MINUS MUL DIV EQ NE LT GT LE GE
 %token <ival> INTEGER
 %token <sval> IDENTIFIER
 
-%type <node> program stmt_list stmt block expr
+%type <node> program stmt_list stmt block expr for_assign
 
 /* Precedence to fix Dangling Else conflict */
 %nonassoc LOWER_THAN_ELSE
@@ -59,9 +59,18 @@ stmt
     | IF LPAREN expr RPAREN stmt %prec LOWER_THAN_ELSE { $$ = ast_make_if($3, $5, NULL); }
     | IF LPAREN expr RPAREN stmt ELSE stmt { $$ = ast_make_if($3, $5, $7); }
     | WHILE LPAREN expr RPAREN stmt { $$ = ast_make_while($3, $5); }
+    | FOR LPAREN stmt expr SEMI for_assign RPAREN stmt
+        { $$ = ast_make_for($3, $4, $6, $8); }
     | block { $$ = $1; }
     | SEMI { $$ = NULL; }
     ;
+
+for_assign
+    : IDENTIFIER ASSIGN expr
+        { $$ = ast_make_assign(ast_make_ident($1), $3); }
+    ;
+
+
 
 block
     : LBRACE stmt_list RBRACE { $$ = ast_make_block($2); }

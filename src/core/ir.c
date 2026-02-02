@@ -52,6 +52,9 @@ void ir_dump(IR *p) {
             case IR_GT:         printf("CMP_GT\n"); break;
             case IR_LE:         printf("CMP_LE\n"); break;
             case IR_GE:         printf("CMP_GE\n"); break;
+            case IR_JMP:   printf("JMP L%d\n", instr.value); break;
+            case IR_JZ:    printf("JZ L%d\n", instr.value); break;
+            case IR_LABEL: printf("L%d:\n", instr.value); break;
             default:            printf("UNKNOWN_OP\n"); break;
         }
     }

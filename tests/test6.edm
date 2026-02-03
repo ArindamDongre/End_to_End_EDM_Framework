@@ -1,0 +1,10 @@
+var i = 0;
+var junk = 0;
+
+while (i < 10) {
+    // These allocations become garbage immediately after the loop iteration
+    junk = i + i; 
+    junk = junk + 1;
+    i = i + 1;
+}
+// Expected: Low memory footprint (leaks should not be 100+)

@@ -40,6 +40,7 @@ typedef struct ASTNode ASTNode;
 [a-zA-Z_][a-zA-Z0-9_]* { yylval.sval = strdup(yytext); return IDENTIFIER; }
 
 [ \t\r\n]+  { /* skip whitespace */ }
+"//".* { /* skip comments */ }
 .           { printf("Lexer error at line %d: Unknown character '%s'\n", yylineno, yytext); }
 
 %%

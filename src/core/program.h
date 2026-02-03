@@ -9,6 +9,8 @@ extern "C" {
 #include "ir.h"
 #include "ast.h"
 
+struct VM;
+
 typedef enum {
     PROGRAM_SUBMITTED,
     PROGRAM_READY,
@@ -24,6 +26,8 @@ typedef struct Program {
 
     ASTNode *ast;
     IR *ir;
+
+    struct VM *vm;
 } Program;
 
 Program *program_create(int pid, const char *source_path);

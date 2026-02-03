@@ -1,6 +1,7 @@
 #include "program.h"
 #include <stdlib.h>
 #include <string.h>
+#include "../debugger/vm_debug.h"
 
 Program *program_create(int pid, const char *source_path)
 {
@@ -13,6 +14,7 @@ Program *program_create(int pid, const char *source_path)
 
     p->ast = NULL;
     p->ir = NULL;
+    p->vm = NULL;
 
     return p;
 }
@@ -26,6 +28,12 @@ void program_destroy(Program *p)
 
     if (p->ir)
         ir_free(p->ir);
+
+    // Cleanup VM
+    if (p->vm) {
+        vm_destroy(p->vm); 
+        free(p->vm);
+    }
 
     if (p->source_path)
         free(p->source_path);

@@ -44,6 +44,8 @@ int compile_program(Program* p) {
         return 0;
     }
 
+    ir_resolve_labels(generated_ir_ptr);
+
     p->ir = generated_ir_ptr;
     printf("DEBUG: IR generated successfully.\n");
     p->state = PROGRAM_READY; 

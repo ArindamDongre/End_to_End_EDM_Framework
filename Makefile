@@ -1,7 +1,8 @@
 CXX = g++
 CC  = gcc
 
-CXXFLAGS = -std=c++17 -Wall -g
+# Added -Isrc/debugger to CXXFLAGS so C++ shell can find vm headers easily
+CXXFLAGS = -std=c++17 -Wall -g -Isrc/debugger
 CFLAGS   = -Wall -g
 
 # -------------------------------
@@ -10,6 +11,7 @@ CFLAGS   = -Wall -g
 CORE_DIR     = src/core
 SHELL_DIR    = src/shell/src
 COMPILER_DIR = src/compiler
+DEBUGGER_DIR = src/debugger
 
 # -------------------------------
 # Output binary
@@ -25,8 +27,10 @@ CORE_SRC = \
     src/core/ir.c \
     src/core/ast.c \
     src/core/irgen.c \
-    src/core/semantic.c \
-    src/vm/vm_ir.c
+    src/core/semantic.c
+
+# Debugger source files
+DEBUGGER_SRC = src/debugger/vm_debug.c
 
 # -------------------------------
 # Compiler (Flex/Bison)
@@ -37,7 +41,7 @@ PARSER_SRC = \
     $(COMPILER_DIR)/lex.yy.c
 
 # -------------------------------
-# Shell C++ source files (Person1)
+# Shell C++ source files
 # -------------------------------
 SHELL_SRC = \
     $(SHELL_DIR)/main.cpp \
@@ -48,9 +52,10 @@ SHELL_SRC = \
 # -------------------------------
 # Object files
 # -------------------------------
-CORE_OBJ   = $(CORE_SRC:.c=.o)
-PARSER_OBJ = $(PARSER_SRC:.c=.o)
-SHELL_OBJ  = $(SHELL_SRC:.cpp=.o)
+CORE_OBJ     = $(CORE_SRC:.c=.o)
+PARSER_OBJ   = $(PARSER_SRC:.c=.o)
+SHELL_OBJ    = $(SHELL_SRC:.cpp=.o)
+DEBUGGER_OBJ = $(DEBUGGER_SRC:.c=.o)
 
 # -------------------------------
 # Default target
@@ -60,7 +65,7 @@ all: $(TARGET)
 # -------------------------------
 # Build final executable
 # -------------------------------
-$(TARGET): $(CORE_OBJ) $(PARSER_OBJ) $(SHELL_OBJ)
+$(TARGET): $(CORE_OBJ) $(PARSER_OBJ) $(SHELL_OBJ) $(DEBUGGER_OBJ)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
 # -------------------------------
@@ -76,7 +81,7 @@ $(COMPILER_DIR)/lex.yy.c: $(COMPILER_DIR)/lexer.l $(COMPILER_DIR)/parser.tab.h
 # Compile C core files
 # -------------------------------
 %.o: %.c
-	$(CC) $(CFLAGS) -I$(CORE_DIR) -I$(COMPILER_DIR) -Isrc/vm -c $< -o $@
+	$(CC) $(CFLAGS) -I$(CORE_DIR) -I$(COMPILER_DIR) -I$(DEBUGGER_DIR) -c $< -o $@
 
 # -------------------------------
 # Compile C++ shell files
@@ -92,6 +97,7 @@ clean:
 	rm -f $(CORE_DIR)/*.o
 	rm -f $(COMPILER_DIR)/*.o
 	rm -f $(SHELL_DIR)/*.o
+	rm -f $(DEBUGGER_DIR)/*.o
 	rm -f $(COMPILER_DIR)/parser.tab.*
 	rm -f $(COMPILER_DIR)/lex.yy.c
 

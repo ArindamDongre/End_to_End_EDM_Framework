@@ -17,6 +17,8 @@ typedef struct ASTNode {
     char name[32];
     int value;
     ASTOp op;
+
+    int line;
 } ASTNode;
 
 ASTNode *ast_make_int(int v);

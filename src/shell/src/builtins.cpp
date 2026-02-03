@@ -11,7 +11,7 @@ extern "C" {
 #include "../../core/program.h"
 #include "../../core/compiler.h"
 #include "../../core/ir.h"
-#include "../../vm/vm_ir.h"
+#include "../../debugger/vm_debug.h"
 }
 
 #include "../include/executor.hpp"
@@ -38,6 +38,11 @@ bool is_builtin(const Command &cmd) {
             name == "list" ||
             name == "run" ||
             name == "kill" ||
+
+            // ✅ Add Memory Management Commands
+            name == "memstat" ||
+            name == "gc" ||
+            name == "leaks" ||
 
             // ✅ Phase2 new commands
             name == "compile" ||
@@ -280,20 +285,10 @@ bool handle_program_commands(std::vector<std::string>& args) {
         return true;
     }
 
-    // ---------------- RUN ----------------
+// ---------------- RUN ----------------
     if (args[0] == "run") {
-        if (args.size() < 2) {
-            cout << "Usage: run <pid>\n";
-            return true;
-        }
-
-        if (!is_number(args[1])) {
-            cout << "PID must be a number\n";
-            return true;
-        }
-
+        if (args.size() < 2) { cout << "Usage: run <pid>\n"; return true; }
         int pid = stoi(args[1]);
-
         if (program_table.find(pid) == program_table.end()) {
             cout << "No such program with PID " << pid << "\n";
             return true;
@@ -303,21 +298,64 @@ bool handle_program_commands(std::vector<std::string>& args) {
 
         // Compile if needed
         if (p->ir == nullptr) {
-            cout << "Compiling program " << pid << "...\n";
-            if (!compile_program(p)) {
-                cout << "Compilation failed.\n";
-                return true;
-            }
+            if (!compile_program(p)) { cout << "Compilation failed.\n"; return true; }
         }
 
-        cout << "\n====== IR OUTPUT (Phase 2) ======\n";
-        ir_dump(p->ir);
+        // ✅ Initialize Persistent VM if needed
+        if (p->vm == nullptr) {
+            p->vm = (VM*)malloc(sizeof(VM));
+            vm_init(p->vm, p->ir);
+        } else {
+            // Optional: Reset VM if re-running
+            // vm_init(p->vm, p->ir); 
+        }
 
         p->state = PROGRAM_RUNNING;
         cout << "Running program " << pid << "\n";
 
-        vm_execute(p->ir);
+        // ✅ Use the persistent VM instance
+        vm_executor(p->vm);
+        
+        // Mark as terminated or paused depending on implementation
+        p->state = PROGRAM_TERMINATED; 
+        return true;
+    }
 
+    // ---------------- MEMSTAT / LEAKS ----------------
+    if (args[0] == "memstat" || args[0] == "leaks") {
+        if (args.size() < 2) { cout << "Usage: " << args[0] << " <pid>\n"; return true; }
+        int pid = stoi(args[1]);
+        if (program_table.find(pid) == program_table.end()) {
+            cout << "No such program.\n";
+            return true;
+        }
+        
+        Program* p = program_table[pid];
+        if (p->vm == nullptr) {
+            cout << "Program has not been run yet (no memory state).\n";
+        } else {
+            vm_report_leaks(p->vm);
+        }
+        return true;
+    }
+
+    // ---------------- GC ----------------
+    if (args[0] == "gc") {
+        if (args.size() < 2) { cout << "Usage: gc <pid>\n"; return true; }
+        int pid = stoi(args[1]);
+        if (program_table.find(pid) == program_table.end()) {
+            cout << "No such program.\n";
+            return true;
+        }
+
+        Program* p = program_table[pid];
+        if (p->vm == nullptr) {
+            cout << "Program has not been run yet.\n";
+        } else {
+            cout << "Running Garbage Collector on PID " << pid << "...\n";
+            gc_collect(p->vm);
+            vm_report_leaks(p->vm); // Report status after GC
+        }
         return true;
     }
 
@@ -346,6 +384,54 @@ bool handle_program_commands(std::vector<std::string>& args) {
         program_table.erase(pid);
 
         cout << "Killed " << pid << "\n";
+        return true;
+    }
+
+// ---------------- DEBUG ----------------
+    if (args[0] == "debug") {
+        if (args.size() < 2) {
+            cout << "Usage: debug <pid>\n";
+            return true;
+        }
+
+        int pid = stoi(args[1]);
+        if (program_table.find(pid) == program_table.end()) {
+            cout << "No such program with PID " << pid << "\n";
+            return true;
+        }
+
+        Program* p = program_table[pid];
+
+        // 1. Compile if needed
+        if (p->ir == nullptr) {
+            if (!compile_program(p)) return true;
+        }
+            
+        // 2. Prepare VM (Create if null, OR RESET if existing)
+        if (p->vm == nullptr) {
+            p->vm = (VM*)malloc(sizeof(VM));
+        }
+        
+        // ✅ CRITICAL FIX: Always reset the VM when starting a debug session
+        // This ensures PC starts at 0 and Stack is clear.
+        vm_init(p->vm, p->ir); 
+
+        // 3. State Transition: RUNNING -> PAUSED
+        p->state = PROGRAM_PAUSED;
+        cout << "Attached to PID " << pid << " [PAUSED]\n";
+
+        // 4. Enter Debug Loop
+        vm_debug(p->vm);
+
+        // 5. State Transition on Exit
+        if (p->vm->pc >= p->ir->size) {
+            p->state = PROGRAM_TERMINATED;
+            cout << "PID " << pid << " terminated.\n";
+        } else {
+            p->state = PROGRAM_PAUSED;
+            cout << "PID " << pid << " is paused.\n";
+        }
+
         return true;
     }
 
